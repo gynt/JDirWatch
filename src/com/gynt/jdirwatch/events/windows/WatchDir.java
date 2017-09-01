@@ -13,16 +13,31 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
+import com.gynt.jdirwatch.events.EventSet;
+import com.gynt.jdirwatch.events.RawEvent;
 import com.sun.nio.file.ExtendedWatchEventModifier;
+
+import lombok.Getter;
 
 public class WatchDir {
 	private final WatchService watcher;
 	private final Map<WatchKey, Path> keys;
 	private final boolean recursive;
 	private boolean trace = false;
+
+	@Getter
+	private final Queue<EventSet> queue = new LinkedBlockingQueue<>();
+
+	private final ArrayList<RawEvent> events = new ArrayList<>();
+
+	private long lastEvent = 0L;
+	private long cutoff = 100L;
 
 	@SuppressWarnings("unchecked")
 	static <T> WatchEvent<T> cast(WatchEvent<?> event) {
@@ -100,15 +115,26 @@ public class WatchDir {
 
 			// wait for key to be signalled
 			WatchKey key;
-			try {
 
-				Thread.sleep(1000);
+			key = watcher.poll();
+			// key = watcher.take();
 
-				key = watcher.take();
-			} catch (InterruptedException x) {
-				return;
-			}
-
+			if (key == null) {
+				if(events.size() > 0 && System.currentTimeMillis()-lastEvent > cutoff) {
+					EventSet set = new EventSet(events.toArray(new RawEvent[0]));
+					queue.offer(set);
+					events.clear();
+					lastEvent = 0;
+					System.out.format("EventSet: total: %s, path: %s\n", set.getEvents().length, set.getEvents()[0].getFullPath());
+				}
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException x) {
+					return;
+				}			
+				continue;
+			} 
+			
 			Path dir = keys.get(key);
 			if (dir == null) {
 				System.err.println("WatchKey not recognized!!");
@@ -127,9 +153,29 @@ public class WatchDir {
 				WatchEvent<Path> ev = cast(event);
 				Path name = ev.context();
 				Path child = dir.resolve(name);
+				
+				RawEvent raw = new RawEvent(ev, dir);
+				
+				if(events.size()>0) {
+					if(events.get(events.size()-1).getFullPath().equals(raw.getFullPath())) {
+						events.add(raw);
+						lastEvent = System.currentTimeMillis();
+						System.out.format("Add event to Set: path: %s\n", child);
+					} else {
+						EventSet set = new EventSet(events.toArray(new RawEvent[0]));
+						queue.offer(set);
+						events.clear();
+						lastEvent = 0;
+						System.out.format("EventSet: total: %s, path: %s\n", set.getEvents().length, child);
+					}
+				} else {
+					events.add(raw);
+					lastEvent = System.currentTimeMillis();
+					System.out.format("Add event to Set: path: %s\n", child);
+				}
 
 				// print out event
-				System.out.format("%s: count: %s path: %s\n", event.kind().name(), event.count(), child);
+				//System.out.format("%s: count: %s path: %s\n", event.kind().name(), event.count(), child);
 
 				// if directory is created, and watching recursively, then
 				// register it and its sub-directories
@@ -165,6 +211,7 @@ public class WatchDir {
 
 	public static void main(String[] args) throws IOException {
 		// parse arguments
+		args = new String[] { "-r", "X:\\test" };
 		if (args.length == 0 || args.length > 2)
 			usage();
 		boolean recursive = false;
