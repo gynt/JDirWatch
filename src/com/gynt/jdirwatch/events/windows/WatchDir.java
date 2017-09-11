@@ -15,6 +15,7 @@ import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -109,7 +110,7 @@ public class WatchDir {
 	/**
 	 * Process all events for keys queued to the watcher
 	 */
-	void processEvents() {
+	public void processEvents() {
 
 		for (;;) {
 
@@ -140,8 +141,15 @@ public class WatchDir {
 				System.err.println("WatchKey not recognized!!");
 				continue;
 			}
+			
+			
 
-			for (WatchEvent<?> event : key.pollEvents()) {
+			List<WatchEvent<?>> poll = key.pollEvents();
+			System.out.println("Events in poll: " + poll.size());
+			
+			//TODO: Consider a single poll to be a chunk of events... Not sure how this works with slow computers.
+			
+			for (WatchEvent<?> event : poll) {
 				WatchEvent.Kind<?> kind = event.kind();
 
 				// TBD - provide example of how OVERFLOW event is handled
@@ -175,7 +183,7 @@ public class WatchDir {
 				}
 
 				// print out event
-				//System.out.format("%s: count: %s path: %s\n", event.kind().name(), event.count(), child);
+				System.out.format("%s: count: %s path: %s\n", event.kind().name(), event.count(), child);
 
 				// if directory is created, and watching recursively, then
 				// register it and its sub-directories
