@@ -1,4 +1,4 @@
-package com.gynt.jdirwatch.events.windows;
+package com.gynt.jdirwatch.windows;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.gynt.jdirwatch.events.EventSet;
-import com.gynt.jdirwatch.events.RawEvent;
+import com.gynt.jdirwatch.events.old.EventSet;
+import com.gynt.jdirwatch.events.old.RawEvent;
 import com.sun.nio.file.ExtendedWatchEventModifier;
 
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.gynt.jdirwatch.events;
+package com.gynt.jdirwatch.events.old;
 
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;

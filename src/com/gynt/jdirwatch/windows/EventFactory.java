@@ -1,8 +1,8 @@
-package com.gynt.jdirwatch.events.windows;
+package com.gynt.jdirwatch.windows;
 
 import java.nio.file.Files;
 
-import com.gynt.jdirwatch.events.RawEvent;
+import com.gynt.jdirwatch.events.old.RawEvent;
 
 public class EventFactory {
 	
