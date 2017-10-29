@@ -28,5 +28,11 @@ public class WatchedPath {
 	public void setPath(Path path) {
 		this.path = path;
 	}
+	
+	public boolean checkIsChild(Path child) {
+		return child.toAbsolutePath().startsWith(path.toAbsolutePath());
+	}
 
+	public void addChild()
+	
 }
